@@ -1,0 +1,50 @@
+--// This file was created by XHider v1.2 [https://discord.gg/hATuHQaQRb]
+
+local fenv = getfenv()
+local _v1 = game:HttpGet("https://sdkapi-public.luarmor.net/library.lua")
+local _v2 = loadstring(_v1)()
+_v2.script_id = ""
+local _v3 = game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Library.lua")
+local _v4 = loadstring(_v3)()
+_v4.Scheme.FontColor = Color3.fromHex("ffffff")
+_v4.Scheme.MainColor = Color3.fromHex("242424")
+_v4.Scheme.AccentColor = Color3.fromHex("db4467")
+_v4.Scheme.BackgroundColor = Color3.fromHex("1c1c1c")
+_v4.Scheme.OutlineColor = Color3.fromHex("373737")
+local _v5 = _v4:SetFont(Enum.Font.Gotham)
+local _v6 = _v4:CreateWindow({
+    AutoShow = true,
+    Center = true,
+    DisableSearch = true,
+    Footer = "Key System - discord.gg/chiyo",
+    Icon = "88161224206829",
+    Resizable = false,
+    Size = UDim2.fromOffset(640, 240),
+    Title = "Nduc"
+})
+local _v7 = _v6:AddTab({Icon = "key", Name = "Key System"})
+local _v8 = _v7:AddLeftGroupbox("Key")
+local _v9 = _v7:AddRightGroupbox("Information")
+local _v10 = _v8:AddInput("main_key_input", {Finished = false, Placeholder = "Enter your key here..."})
+local _v11 = _v10:OnChanged(function(propertyName)
+    task.delay(0.35, function(...) end)
+end)
+local _v12 = _v8:AddButton({Func = function()
+    local _v16 = _v4:Notify({Description = "This game is not supported.", Time = 5, Title = "Unsupported"})
+end, Text = "Enter"})
+local _v13 = _v8:AddButton({Func = function()
+    local UserInputService = game:GetService("UserInputService")
+    local _v17 = UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
+    setclipboard("https://chiyodev.vercel.app/getkey")
+    local _v18 = _v4:Notify({Description = "Key link copied.", Time = 4, Title = "Link Copied"})
+end, Text = "Copy Key Link"})
+local _v14 = _v9:AddLabel({
+    DoesWrap = true,
+    Size = 13,
+    Text = "<font color='#db4467'><b>Upgrade to premium?</b></font>\n   Get premium from our Discord Server to support us and skip the key system."
+})
+local _v15 = _v9:AddLabel({
+    DoesWrap = true,
+    Size = 13,
+    Text = "<font color='#db4467'><b>How do checkpoints work?</b></font>\n   Each checkpoint gives you 12 hours of access per key."
+})
