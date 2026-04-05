@@ -1,0 +1,23 @@
+-- ==========================================
+-- Sailor Piece Auto Farm & Fruit Sniper Hub
+-- Supported on PC and Mobile Executors
+-- ==========================================
+
+-- 1. Load the UI Library
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({
+    Name = "Nduc",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "SailorPiece"
+})
+
+-- 2. Execute the Main Automation Script
+loadstring(game:HttpGet("https://raw.githubusercontent.com/AmariScript/Sailor/main/AutoFarm.lua"))()
+
+-- 3. Anti-AFK Mechanism (Prevents server disconnects)
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
