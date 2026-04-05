@@ -1,0 +1,56 @@
+-- 1. Lấy dịch vụ MarketplaceService của Roblox để truy xuất thông tin game
+local MarketplaceService = game:GetService("MarketplaceService")
+
+-- 2. Hàm lấy tên game dựa trên GameId
+--    Mục đích: Hiển thị tên game đang chạy trong thông báo
+local function getGameName(gameId)
+    -- Dùng pcall để bắt lỗi, tránh crash script nếu không lấy được thông tin
+    local success, result = pcall(function()
+        local info = MarketplaceService:GetProductInfo(gameId) -- API lấy thông tin sản phẩm/game
+        return info.Name -- Trả về tên game
+    end)
+
+    if success then
+        return result -- Trả về tên game nếu thành công
+    else
+        return nil -- Trả về nil nếu thất bại (ví dụ: gameId không hợp lệ)
+    end
+end
+
+-- 3. Danh sách các game được hỗ trợ (GameId -> Mã hash của script trên luarmor.net)
+--    Đây là phần "obfuscate" nhẹ: thay vì để link trực tiếp, họ dùng mã hash.
+local supportedGames = {
+    [7436755782] = "4c4184fbd445363d2f93154c5d291359", -- Game A (Ví dụ: Blox Fruits cũ?)
+    [9186719164] = "b3227dfea3088c1846e74be615524317", -- Game B
+    [5750914919] = "67349e01f0ab2f4f2138036612c626ae", -- Game C
+    [6701277882] = "b79b6aa4165a674444e2ce8938acbdc7", -- Game D
+    [9363735110] = "54f96e9dfc53e8c526d415255617fe61"  -- Game E
+}
+
+-- 4. Kiểm tra game hiện tại có được hỗ trợ không
+if supportedGames[game.GameId] then
+    -- Nếu CÓ: Hiển thị thông báo thành công và tải script chính
+    game.StarterGui:SetCore(
+        "SendNotification",
+        {
+            Title = "Nduc Loaded!",
+            Text = getGameName(game.PlaceId),  -- Hiển thị tên game (có thể bị lỗi nếu PlaceId không khớp)
+            Icon = "rbxassetid://88161224206829", -- Icon tùy chỉnh
+            Duration = 5
+        }
+    )
+    -- Tải script chính từ luarmor.net (dịch vụ bảo vệ script bằng cách mã hóa)
+    -- Link đầy đủ sẽ có dạng: https://api.luarmor.net/files/v4/loaders/[HASH].lua
+    loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/" .. supportedGames[game.GameId] .. ".lua"))()
+else
+    -- Nếu KHÔNG: Hiển thị thông báo lỗi
+    game.StarterGui:SetCore(
+        "SendNotification",
+        {
+            Title = "Nduc Error",
+            Text = "Unsupported Map Detected",  -- "Phát hiện bản đồ không được hỗ trợ"
+            Icon = "rbxassetid://88161224206829",
+            Duration = 5
+        }
+    )
+end
