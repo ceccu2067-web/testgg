@@ -1,0 +1,624 @@
+Dưới đây là một trình mô phỏng tự động farm level theo phong cách game Blox Fruit, nơi bạn có thể nâng cấp sức mạnh và để nhân vật tự động chiến đấu, tăng kinh nghiệm và cấp độ.
+
+```html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nduc - Blox Fruit Level Simulator | Tự động farm cấp độ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a0f1c 0%, #0c1a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Press Start 2P', monospace;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: #0f2120;
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            border: 1px solid #ffb347;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 28px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            background: #2a5a4a;
+            background-image: radial-gradient(circle at 10% 30%, #3d8468 1.5px, transparent 1.5px);
+            background-size: 32px 32px;
+            cursor: pointer;
+        }
+
+        .farm-panel {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(6px);
+            padding: 15px 20px;
+            border-radius: 60px;
+            border: 1px solid #f5b042;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #1e2a25;
+            padding: 8px 20px;
+            border-radius: 40px;
+        }
+
+        .stat-card {
+            background: #2a1e12;
+            border-radius: 32px;
+            padding: 5px 18px;
+            text-align: center;
+            color: #ffecb3;
+            font-weight: bold;
+            box-shadow: inset 0 1px 0 #ffdd99, 0 4px 8px black;
+        }
+
+        .stat-card span {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffe6b3, #ffaa33);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #f0a020;
+            border: none;
+            font-family: inherit;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 36px;
+            font-size: 1rem;
+            color: #1f1a0c;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 5px 0 #8b5a2b;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #8b5a2b;
+        }
+
+        .upgrade-list {
+            background: #0a1919cc;
+            border-radius: 28px;
+            padding: 12px 18px;
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .upgrade {
+            background: #27221c;
+            border-radius: 28px;
+            padding: 6px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 5px solid #ffb347;
+        }
+
+        .upgrade button {
+            background: #2f6b47;
+            box-shadow: 0 3px 0 #1a3a2a;
+            padding: 4px 16px;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffd966;
+            text-shadow: 2px 2px 0 #6a3e00;
+        }
+
+        .log-area {
+            background: #010b0b99;
+            border-radius: 24px;
+            padding: 8px 15px;
+            margin-top: 12px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: #d6d2b0;
+            max-height: 70px;
+            overflow-y: auto;
+        }
+
+        @keyframes pulse {
+            0% { text-shadow: 0 0 0px gold; }
+            100% { text-shadow: 0 0 8px orange; }
+        }
+
+        .auto-badge {
+            background: #ff8800;
+            border-radius: 30px;
+            padding: 5px 15px;
+            font-weight: bold;
+            color: #1f2a0e;
+            animation: pulse 0.8s infinite alternate;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <canvas id="gameCanvas" width="1000" height="500"></canvas>
+    
+    <div class="farm-panel">
+        <div class="stats">
+            <div class="stat-card">🎚️ LEVEL <span id="levelValue">1</span></div>
+            <div class="stat-card">⚔️ EXP <span id="expValue">0</span> / <span id="nextExp">100</span></div>
+            <div class="stat-card">💪 SỨC MẠNH <span id="powerValue">10</span></div>
+            <div class="stat-card">⚡ TỐC ĐỘ <span id="speedValue">1.0</span>/s</div>
+        </div>
+        <div class="button-group">
+            <button id="manualFarmBtn">🍖 FARM THỦ CÔNG (+EXP)</button>
+            <button id="toggleAutoBtn">⏯️ BẬT Kaitun AUTO</button>
+            <button id="resetBtn">🔄 RESET</button>
+        </div>
+    </div>
+    
+    <div class="upgrade-list">
+        <div class="upgrade">
+            <span>🔪 Tăng Sức Mạnh (+5 dmg/exp)</span>
+            <button id="upgradePower">Nâng cấp 🪙 <span id="powerCost">50</span></button>
+        </div>
+        <div class="upgrade">
+            <span>⚡ Gia tốc Farm (-0.08s/đòn)</span>
+            <button id="upgradeSpeed">Tăng tốc 🪙 <span id="speedCost">80</span></button>
+        </div>
+        <div class="upgrade">
+            <span>💰 Nhân đôi EXP khi farm</span>
+            <button id="upgradeDouble">Mua nhân đôi 🪙 <span id="doubleCost">200</span></button>
+        </div>
+        <div class="auto-badge" id="autoStatus">🔴 Kaitun: TẮT</div>
+    </div>
+    <div class="log-area" id="logMessages">
+        > Chào mừng Kaitun thủ! Hãy bật auto hoặc farm tay để lên level.
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ------------------ CẤU HÌNH GAME ------------------
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = 1000, H = 500;
+        canvas.width = W;
+        canvas.height = H;
+        
+        // Thông số người chơi
+        let level = 1;
+        let currentExp = 0;
+        let basePower = 10;     // sức mạnh ảnh hưởng exp nhận mỗi lần farm
+        let attackSpeed = 1.0;   // số lần farm mỗi giây (tối đa 5)
+        let doubleExpOwned = false;  // nhân đôi exp
+        
+        // Tài nguyên (vàng) - dùng để nâng cấp
+        let gold = 0;
+        
+        // Công thức exp cần cho level tiếp theo
+        function expNeededForNextLevel() {
+            return Math.floor(100 + (level-1) * 35);
+        }
+        
+        // Hàm nhận exp khi farm
+        function gainExp(amount) {
+            let finalExp = amount;
+            if(doubleExpOwned) finalExp = Math.floor(finalExp * 2);
+            currentExp += finalExp;
+            // thêm vàng dựa trên exp nhận (mô phỏng rơi vàng)
+            let goldGain = Math.floor(finalExp * 0.6) + 1;
+            gold += goldGain;
+            
+            // log
+            addLog(`+${finalExp} EXP, +${goldGain} vàng 🪙`);
+            
+            let needed = expNeededForNextLevel();
+            let levelUpFlag = false;
+            while(currentExp >= needed) {
+                currentExp -= needed;
+                level++;
+                needed = expNeededForNextLevel();
+                levelUpFlag = true;
+                // thêm vàng thưởng khi lên level
+                let levelBonus = 100 + level * 15;
+                gold += levelBonus;
+                addLog(`🎉 LÊN CẤP ${level}! Nhận thưởng ${levelBonus} Vàng! 🎉`);
+                // tăng sức mạnh nền mỗi level (tự động nhẹ)
+                basePower += 2;
+            }
+            if(levelUpFlag) {
+                addLog(`Sức mạnh cơ bản tăng lên ${basePower} (do lên cấp)`);
+            }
+            updateUI();
+        }
+        
+        // Hành động farm (đánh quái) -> nhận exp dựa trên sức mạnh
+        function performFarm() {
+            let expReward = Math.floor(basePower + Math.random() * 5) + 3;
+            // tỉ lệ chí mạng nhỏ
+            if(Math.random() < 0.15) {
+                expReward = Math.floor(expReward * 1.8);
+                addLog(`🔥 CHÍ MẠNG! +${expReward} EXP!`);
+            }
+            gainExp(expReward);
+            // thêm hiệu ứng animation trên canvas
+            createFarmEffect();
+        }
+        
+        // ----- HỆ THỐNG AUTO FARM (Kaitun) -----
+        let autoInterval = null;
+        let isAutoFarming = false;
+        let autoDelayMs = 1000; // mili giây mặc định 1 giây (tốc độ 1 lần/s)
+        
+        function updateAutoInterval() {
+            if(autoInterval) clearInterval(autoInterval);
+            if(isAutoFarming) {
+                // tốc độ farm: attackSpeed (lần/giây) => delay = 1000 / attackSpeed
+                let intervalTime = Math.max(150, 1000 / attackSpeed); // giới hạn tối đa ~6-7 lần/s
+                autoInterval = setInterval(() => {
+                    if(isAutoFarming) {
+                        performFarm();
+                        // vẽ thêm hiệu ứng mỗi lần auto
+                    }
+                }, intervalTime);
+            } else {
+                if(autoInterval) clearInterval(autoInterval);
+                autoInterval = null;
+            }
+        }
+        
+        function startAutoFarm() {
+            if(isAutoFarming) return;
+            isAutoFarming = true;
+            updateAutoInterval();
+            document.getElementById('autoStatus').innerHTML = '🟢 Kaitun: BẬT (Auto farm)';
+            addLog("🤖 Kaitun tự động farm được kích hoạt! Hãy tận hưởng.");
+        }
+        
+        function stopAutoFarm() {
+            if(!isAutoFarming) return;
+            isAutoFarming = false;
+            if(autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+            }
+            document.getElementById('autoStatus').innerHTML = '🔴 Kaitun: TẮT';
+            addLog("⏸️ Dừng auto farm.");
+        }
+        
+        function toggleAuto() {
+            if(isAutoFarming) stopAutoFarm();
+            else startAutoFarm();
+        }
+        
+        // ----- NÂNG CẤP -----
+        let powerUpgradeCost = 50;
+        let speedUpgradeCost = 80;
+        let doubleCost = 200;
+        
+        function upgradePower() {
+            if(gold >= powerUpgradeCost) {
+                gold -= powerUpgradeCost;
+                basePower += 5;
+                powerUpgradeCost = Math.floor(powerUpgradeCost * 1.35);
+                addLog(`💪 Nâng sức mạnh +5 (tổng ${basePower}). Lần sau: ${powerUpgradeCost} vàng`);
+                updateUI();
+            } else {
+                addLog(`❌ Không đủ vàng để nâng sức mạnh! Cần ${powerUpgradeCost} vàng.`);
+            }
+        }
+        
+        function upgradeSpeed() {
+            if(gold >= speedUpgradeCost) {
+                gold -= speedUpgradeCost;
+                // tăng tốc độ farm (attackSpeed tối đa 6.5 lần/giây)
+                let newSpeed = attackSpeed + 0.32;
+                if(newSpeed > 6.8) newSpeed = 6.8;
+                attackSpeed = newSpeed;
+                speedUpgradeCost = Math.floor(speedUpgradeCost * 1.4);
+                addLog(`⚡ Tốc độ farm tăng lên ${attackSpeed.toFixed(2)} lần/giây. Cấp độ kế: ${speedUpgradeCost} vàng`);
+                // cập nhật lại interval auto nếu đang bật
+                if(isAutoFarming) {
+                    updateAutoInterval();
+                }
+                updateUI();
+            } else {
+                addLog(`❌ Không đủ vàng tăng tốc! Cần ${speedUpgradeCost} vàng`);
+            }
+        }
+        
+        function buyDoubleExp() {
+            if(doubleExpOwned) {
+                addLog(`✨ Bạn đã sở hữu nhân đôi exp rồi!`);
+                return;
+            }
+            if(gold >= doubleCost) {
+                gold -= doubleCost;
+                doubleExpOwned = true;
+                addLog(`🌈 MUA THÀNH CÔNG! NHÂN ĐÔI EXP VĨNH VIỄN!`);
+                updateUI();
+            } else {
+                addLog(`💰 Không đủ vàng để mua nhân đôi! Cần ${doubleCost} vàng`);
+            }
+        }
+        
+        // reset toàn bộ
+        function resetGame() {
+            stopAutoFarm();
+            level = 1;
+            currentExp = 0;
+            basePower = 10;
+            attackSpeed = 1.0;
+            doubleExpOwned = false;
+            gold = 0;
+            powerUpgradeCost = 50;
+            speedUpgradeCost = 80;
+            doubleCost = 200;
+            updateUI();
+            addLog("🌀 Đã reset hành trình! Bắt đầu lại từ đầu.");
+            // cập nhật lại UI và interval
+            if(isAutoFarming) {
+                startAutoFarm(); // refresh
+            }
+        }
+        
+        // Cập nhật tất cả hiển thị
+        function updateUI() {
+            document.getElementById('levelValue').innerText = level;
+            let next = expNeededForNextLevel();
+            document.getElementById('expValue').innerText = currentExp;
+            document.getElementById('nextExp').innerText = next;
+            document.getElementById('powerValue').innerText = basePower;
+            document.getElementById('speedValue').innerText = attackSpeed.toFixed(2);
+            document.getElementById('powerCost').innerText = powerUpgradeCost;
+            document.getElementById('speedCost').innerText = speedUpgradeCost;
+            document.getElementById('doubleCost').innerText = doubleCost;
+            // cập nhật vàng hiển thị ở góc canvas hoặc thêm 1 element
+            drawStatsOnCanvas();
+        }
+        
+        // Log thông báo
+        const logDiv = document.getElementById('logMessages');
+        function addLog(msg) {
+            const p = document.createElement('div');
+            p.innerText = `> ${new Date().toLocaleTimeString()} - ${msg}`;
+            logDiv.appendChild(p);
+            p.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            while(logDiv.children.length > 25) logDiv.removeChild(logDiv.firstChild);
+        }
+        
+        // ----- HIỆU ỨNG VẼ TRÊN CANVAS (sinh động)-----
+        let particles = [];
+        let farmFlash = 0;
+        
+        function createFarmEffect() {
+            farmFlash = 10;
+            // thêm vài hạt
+            for(let i=0;i<12;i++) {
+                particles.push({
+                    x: W - 120 + Math.random() * 80,
+                    y: H - 70 + Math.random() * 60,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: Math.random() * -2 - 1,
+                    life: 1,
+                    size: Math.random() * 5 + 2,
+                    color: `hsl(${Math.random() * 40 + 30}, 80%, 60%)`
+                });
+            }
+        }
+        
+        function updateParticles() {
+            for(let i=0;i<particles.length;i++) {
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].life -= 0.03;
+                if(particles[i].life <= 0 || particles[i].y < 0 || particles[i].x > W+50 || particles[i].x < -50) {
+                    particles.splice(i,1);
+                    i--;
+                }
+            }
+            if(farmFlash > 0) farmFlash -= 0.6;
+        }
+        
+        function drawStatsOnCanvas() {
+            // vẽ luôn bảng vàng, double status
+            ctx.font = "bold 22 'Segoe UI'";
+            ctx.fillStyle = "#FFE484";
+            ctx.shadowBlur = 0;
+            ctx.fillText(`🪙 VÀNG: ${gold}`, 25, 60);
+            ctx.font = "bold 15 monospace";
+            ctx.fillStyle = "#ffcf70";
+            if(doubleExpOwned) ctx.fillText("✨ NHÂN ĐÔI EXP (ACTIVE)", 25, 100);
+            else ctx.fillText("💢 Chưa có nhân đôi exp", 25, 100);
+        }
+        
+        // Vẽ nhân vật và quái (theme Blox Fruit)
+        function drawScene() {
+            // nền
+            const grad = ctx.createLinearGradient(0,0,0,H);
+            grad.addColorStop(0, '#1f634a');
+            grad.addColorStop(1, '#12352a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,W,H);
+            // vẽ cỏ, cây
+            ctx.fillStyle = "#3faa6e";
+            for(let i=0;i<8;i++) {
+                ctx.beginPath();
+                ctx.moveTo(80 + i*130, H-45);
+                ctx.lineTo(45 + i*130, H-90);
+                ctx.lineTo(115 + i*130, H-90);
+                ctx.fill();
+            }
+            // mặt trời
+            ctx.fillStyle = "#F9B43A";
+            ctx.beginPath();
+            ctx.arc(870, 65, 38, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#FFD966";
+            ctx.beginPath();
+            ctx.arc(870, 65, 28, 0, Math.PI*2);
+            ctx.fill();
+            
+            // nhân vật chính (thợ săn)
+            ctx.save();
+            ctx.shadowBlur = 6;
+            // body
+            ctx.beginPath();
+            ctx.arc(180, H-90, 26, 0, Math.PI*2);
+            ctx.fillStyle = "#3C8F6E";
+            ctx.fill();
+            ctx.fillStyle = "#E0A43F";
+            ctx.beginPath();
+            ctx.ellipse(180, H-100, 18, 8, 0, 0, Math.PI*2);
+            ctx.fill(); // mũ
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(168, H-98, 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(192, H-98, 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#1a2f26";
+            ctx.beginPath();
+            ctx.arc(170, H-97, 2.5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(194, H-97, 2.5, 0, Math.PI*2);
+            ctx.fill();
+            // kiếm
+            ctx.beginPath();
+            ctx.moveTo(205, H-85);
+            ctx.lineTo(230, H-110);
+            ctx.lineTo(225, H-115);
+            ctx.fillStyle = "#b0a07c";
+            ctx.fill();
+            ctx.fillStyle = "#EFD98E";
+            ctx.font = "bold 24px monospace";
+            ctx.fillText("⚔️", 210, H-100);
+            // quái vật (boss bandit)
+            ctx.fillStyle = "#9E5E2E";
+            ctx.beginPath();
+            ctx.ellipse(W-130, H-70, 35, 40, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#63432b";
+            ctx.beginPath();
+            ctx.ellipse(W-145, H-85, 10, 12, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(W-115, H-85, 10, 12, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(W-145, H-88, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(W-115, H-88, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#2F221B";
+            ctx.fillRect(W-145, H-63, 30, 18);
+            ctx.fillStyle = "#c98656";
+            ctx.fillRect(W-135, H-78, 10, 18);
+            ctx.fillStyle = "#AA7341";
+            ctx.font = "bold 18px monospace";
+            ctx.fillText("🍖 BANDIT", W-175, H-45);
+            // hiệu ứng chớp farm
+            if(farmFlash > 0) {
+                ctx.fillStyle = `rgba(255, 200, 80, ${farmFlash/12})`;
+                ctx.fillRect(0,0,W,H);
+            }
+            // particles
+            for(let p of particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+            drawStatsOnCanvas();
+            // vẽ chỉ số tốc độ auto
+            if(isAutoFarming) {
+                ctx.font = "bold 16 monospace";
+                ctx.fillStyle = "#22FFAA";
+                ctx.fillText(`🤖 KAITUN ACTIVE | ${attackSpeed.toFixed(2)} hits/giây`, W-280, 40);
+            } else {
+                ctx.fillStyle = "#f9a26c";
+                ctx.fillText(`⏸️ Auto tắt | Bấm nút để bật`, W-280, 40);
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            updateParticles();
+            drawScene();
+            requestAnimationFrame(animate);
+        }
+        
+        // ----- GẮN SỰ KIỆN BUTTON -----
+        document.getElementById('manualFarmBtn').addEventListener('click', () => {
+            performFarm();
+            addLog(`👊 Thủ công farm!`);
+        });
+        document.getElementById('toggleAutoBtn').addEventListener('click', toggleAuto);
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+        document.getElementById('upgradePower').addEventListener('click', upgradePower);
+        document.getElementById('upgradeSpeed').addEventListener('click', upgradeSpeed);
+        document.getElementById('upgradeDouble').addEventListener('click', buyDoubleExp);
+        
+        // khởi tạo lần đầu
+        updateUI();
+        animate();
+        // thêm vài sự kiện nhỏ
+        addLog("⚙️ Hệ thống Kaitun Farm Level sẵn sàng! Nâng cấp tốc độ để farm nhanh hơn.");
+        
+        // Tự động lưu gold và tiến trình không cần local nhưng có thể để ý
+        window.addEventListener('beforeunload', () => {
+            if(isAutoFarming) stopAutoFarm();
+        });
+    })();
+</script>
+</body>
+</html>
+```
