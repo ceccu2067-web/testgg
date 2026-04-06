@@ -1,0 +1,18 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Đợi nhân vật
+if not player.Character then
+    player.CharacterAdded:Wait()
+end
+
+local character = player.Character
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- In ra vị trí mỗi khi nhân vật di chuyển
+game:GetService("RunService").Heartbeat:Connect(function()
+    if rootPart and rootPart.Parent then
+        local pos = rootPart.Position
+        print(player.Name .. " is at:", pos)
+    end
+end)
